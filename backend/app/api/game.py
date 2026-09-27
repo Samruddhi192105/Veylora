@@ -3,7 +3,8 @@ from fastapi import APIRouter, HTTPException
 from app.game.game_engine import (
     create_game_session,
     get_game_session,
-    interact_with_object
+    interact_with_object,
+    use_exit_door
 )
 
 from app.game.room_manager import get_room
@@ -82,3 +83,16 @@ def interact(
         "message": "Object discovered",
         "object": object_data
     }
+
+@router.post("/{session_id}/exit")
+def exit_game(session_id: str):
+
+    result, error = use_exit_door(session_id)
+
+    if error:
+        raise HTTPException(
+            status_code=400,
+            detail=error
+        )
+
+    return result

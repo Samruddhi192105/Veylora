@@ -37,7 +37,8 @@ def solve_puzzle(
     is_correct, result = validate_puzzle_solution(
         puzzle_id,
         attempt.answer,
-        game["discovered_clues"]
+        game["discovered_clues"],
+        game["inventory"]
     )
 
     new_attempt_count = game["attempts"] + 1

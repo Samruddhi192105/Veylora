@@ -81,23 +81,28 @@ def interact_with_object(
         updates["discovered_objects"] = discovered_objects
 
     # Reveal clues based on the object
+
     if object_id == "grandfather_clock":
 
         if "clock_time_1145" not in discovered_clues:
-
             discovered_clues.append("clock_time_1145")
-
             updates["discovered_clues"] = discovered_clues
+
 
     elif object_id == "diary":
 
         if "diary_message" not in discovered_clues:
-
             discovered_clues.append("diary_message")
-
             updates["discovered_clues"] = discovered_clues
 
-    # Save changes if anything changed
+
+    elif object_id == "bookshelf":
+
+        if "bookshelf_sequence" not in discovered_clues:
+            discovered_clues.append("bookshelf_sequence")
+            updates["discovered_clues"] = discovered_clues
+        
+        # Save changes if anything changed
     if updates:
 
         update_game_session(
@@ -106,3 +111,28 @@ def interact_with_object(
         )
 
     return object_data, None
+
+def use_exit_door(session_id: str):
+    game = get_game_session(session_id)
+
+    if game is None:
+        return None, "Game session not found"
+
+    if game["status"] == "completed":
+        return None, "Game has already been completed"
+
+    if "exit_key" not in game["inventory"]:
+        return None, "The exit door is locked. You need the exit key."
+
+    update_game_session(
+        session_id,
+        {
+            "status": "completed",
+            "current_room": "escaped"
+        }
+    )
+
+    return {
+        "status": "completed",
+        "message": "You unlocked the exit door and escaped the study!"
+    }, None
