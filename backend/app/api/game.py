@@ -7,6 +7,8 @@ from app.game.game_engine import (
     use_exit_door
 )
 
+from app.database.mongodb import db
+
 from app.game.room_manager import get_room
 
 
@@ -14,6 +16,10 @@ router = APIRouter(
     prefix="/game",
     tags=["Game"]
 )
+
+
+# MongoDB collection for game events
+game_events = db["game_events"]
 
 
 @router.post("/start")
@@ -62,6 +68,7 @@ def get_current_room(session_id: str):
 
     return room
 
+
 @router.post("/{session_id}/interact/{object_id}")
 def interact(
     session_id: str,
@@ -84,6 +91,7 @@ def interact(
         "object": object_data
     }
 
+
 @router.post("/{session_id}/exit")
 def exit_game(session_id: str):
 
@@ -96,3 +104,27 @@ def exit_game(session_id: str):
         )
 
     return result
+
+
+@router.get("/{session_id}/events")
+def get_game_events(session_id: str):
+
+    game = get_game_session(session_id)
+
+    if game is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Game session not found"
+        )
+
+    events = list(
+        game_events.find(
+            {"session_id": session_id},
+            {"_id": 0}
+        ).sort("created_at", 1)
+    )
+
+    return {
+        "session_id": session_id,
+        "events": events
+    }

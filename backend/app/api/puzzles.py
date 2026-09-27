@@ -1,11 +1,11 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
+from app.game.game_events import record_event
 from app.game.game_engine import (
     get_game_session,
     update_game_session
 )
-
 from app.game.puzzle_engine import validate_puzzle_solution
 
 
@@ -41,8 +41,19 @@ def solve_puzzle(
         game["inventory"]
     )
 
+    # Increase total number of attempts
     new_attempt_count = game["attempts"] + 1
 
+    # Record every puzzle attempt
+    record_event(
+        session_id,
+        "PUZZLE_ATTEMPTED",
+        {
+            "puzzle_id": puzzle_id
+        }
+    )
+
+    # Incorrect answer
     if not is_correct:
 
         update_game_session(
@@ -58,16 +69,40 @@ def solve_puzzle(
             "attempts": new_attempt_count
         }
 
+    # Correct answer
     solved_puzzles = game["solved_puzzles"]
 
     if puzzle_id not in solved_puzzles:
+
         solved_puzzles.append(puzzle_id)
 
+        # Record successful puzzle solving
+        record_event(
+            session_id,
+            "PUZZLE_SOLVED",
+            {
+                "puzzle_id": puzzle_id,
+                "reward": result
+            }
+        )
+
+    # Add reward to inventory
     inventory = game["inventory"]
 
     if result not in inventory:
+
         inventory.append(result)
 
+        # Record item acquisition
+        record_event(
+            session_id,
+            "ITEM_ACQUIRED",
+            {
+                "item_id": result
+            }
+        )
+
+    # Save updated game state
     update_game_session(
         session_id,
         {
