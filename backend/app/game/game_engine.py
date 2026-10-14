@@ -174,11 +174,8 @@ def interact_with_object(session_id: str, object_id: str):
     # ---------------------------------------------------------
 
     if object_id == "grandfather_clock":
-
         if "clock_time_1145" not in discovered_clues:
-
             discovered_clues.append("clock_time_1145")
-
             updates["discovered_clues"] = discovered_clues
 
             record_event(

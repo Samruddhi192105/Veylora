@@ -1,9 +1,10 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends
 from pydantic import BaseModel
+from typing import Any
 
+from app.auth import get_current_user, require_owned_game
 from app.game.game_events import record_event
 from app.game.game_engine import (
-    get_game_session,
     update_game_session
 )
 from app.game.puzzle_engine import validate_puzzle_solution
@@ -23,16 +24,11 @@ class PuzzleAttempt(BaseModel):
 def solve_puzzle(
     session_id: str,
     puzzle_id: str,
-    attempt: PuzzleAttempt
+    attempt: PuzzleAttempt,
+    user: dict[str, Any] = Depends(get_current_user),
 ):
 
-    game = get_game_session(session_id)
-
-    if game is None:
-        raise HTTPException(
-            status_code=404,
-            detail="Game session not found"
-        )
+    game = require_owned_game(session_id, user)
 
     is_correct, result = validate_puzzle_solution(
         puzzle_id,

@@ -3,7 +3,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api.puzzles import router as puzzle_router
 from app.database.mongodb import check_mongodb_connection
 from app.api.game import router as game_router
-
+from app.api.ai import router as ai_router
+from app.api.auth import router as auth_router
+from app.api.rag import router as rag_router
 
 app = FastAPI(
     title="Veylora API",
@@ -23,7 +25,9 @@ app.add_middleware(
 
 app.include_router(game_router)
 app.include_router(puzzle_router)
-
+app.include_router(ai_router)
+app.include_router(auth_router)
+app.include_router(rag_router)
 
 @app.get("/")
 def root():

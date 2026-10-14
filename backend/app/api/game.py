@@ -1,8 +1,10 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
+from typing import Any
+
+from app.auth import get_current_user, require_owned_game
 
 from app.game.game_engine import (
     create_game_session,
-    get_game_session,
     interact_with_object,
     use_exit_door
 )
@@ -23,9 +25,9 @@ game_events = db["game_events"]
 
 
 @router.post("/start")
-def start_game():
+def start_game(user: dict[str, Any] = Depends(get_current_user)):
 
-    game = create_game_session()
+    game = create_game_session(player_id=user["user_id"])
 
     return {
         "message": "Game started successfully",
@@ -34,29 +36,21 @@ def start_game():
 
 
 @router.get("/{session_id}")
-def get_game(session_id: str):
+def get_game(
+    session_id: str,
+    user: dict[str, Any] = Depends(get_current_user),
+):
 
-    game = get_game_session(session_id)
-
-    if game is None:
-        raise HTTPException(
-            status_code=404,
-            detail="Game session not found"
-        )
-
-    return game
+    return require_owned_game(session_id, user)
 
 
 @router.get("/{session_id}/room")
-def get_current_room(session_id: str):
+def get_current_room(
+    session_id: str,
+    user: dict[str, Any] = Depends(get_current_user),
+):
 
-    game = get_game_session(session_id)
-
-    if game is None:
-        raise HTTPException(
-            status_code=404,
-            detail="Game session not found"
-        )
+    game = require_owned_game(session_id, user)
 
     room = get_room(game["current_room"])
 
@@ -72,8 +66,10 @@ def get_current_room(session_id: str):
 @router.post("/{session_id}/interact/{object_id}")
 def interact(
     session_id: str,
-    object_id: str
+    object_id: str,
+    user: dict[str, Any] = Depends(get_current_user),
 ):
+    require_owned_game(session_id, user)
 
     object_data, error = interact_with_object(
         session_id,
@@ -93,7 +89,11 @@ def interact(
 
 
 @router.post("/{session_id}/exit")
-def exit_game(session_id: str):
+def exit_game(
+    session_id: str,
+    user: dict[str, Any] = Depends(get_current_user),
+):
+    require_owned_game(session_id, user)
 
     result, error = use_exit_door(session_id)
 
@@ -107,15 +107,11 @@ def exit_game(session_id: str):
 
 
 @router.get("/{session_id}/events")
-def get_game_events(session_id: str):
-
-    game = get_game_session(session_id)
-
-    if game is None:
-        raise HTTPException(
-            status_code=404,
-            detail="Game session not found"
-        )
+def get_game_events(
+    session_id: str,
+    user: dict[str, Any] = Depends(get_current_user),
+):
+    require_owned_game(session_id, user)
 
     events = list(
         game_events.find(
