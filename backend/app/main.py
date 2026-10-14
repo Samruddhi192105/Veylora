@@ -19,6 +19,7 @@ app.add_middleware(
     allow_origins=[
         "http://localhost:3000",
         "https://veylora-blue.vercel.app",
+        "https://veylora-i0silqq20-samruddhis-projects-3cf2ce45.vercel.app",
     ],
     allow_credentials=True,
     allow_methods=["*"],
